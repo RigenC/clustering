@@ -1,0 +1,5 @@
+<dbroot>
+	<dbhost>jdbc:127.0.0.1:3306/sql_test</dbhost>
+	<dbusername>root</dbusername>
+	<dbpassword>admin</dbpassword>
+	<dbdriver>com.mysql.jdbc.Driver</dbdriver></dbroot>
