@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 
 import database.DBmanipulate;
 import dynamicText.DynamicTextVector;
 import dynamicText.TextVector;
+import preHandle.transformFromQQ;
 import sementicAccurate.Word;
 
 public class SessionExtract {
@@ -36,20 +38,48 @@ public class SessionExtract {
 	public static void ExecuteExtract() throws SQLException, ParseException {
 		Word.wordInitial();
 		DBmanipulate db=DBmanipulate.getInstance();
+		transformFromQQ.ALLUSERNAME=db.getAllUser();
 		ResultSet rs=db.selectChatRecordN();
+		TextVector lastvector = null;
 		while(rs.next()){
 			int id=rs.getInt("id");
-			System.out.println(id);
 			String content=rs.getString("content");
 			String user_number=rs.getString("user_number");
 			String record_time=rs.getString("record_time");
-			TextVector vector=new TextVector(id, content, record_time, user_number);
+			String response_to=rs.getString("response_to");
+			String response_to_number=null;
+			if(response_to!=null){
+				for(Entry<String, Set<String>> entry:transformFromQQ.ALLUSERNAME.entrySet()){
+					if(entry.getValue().contains(response_to)){
+						response_to_number=entry.getKey();
+						break;
+					}
+				}
+			}
+			TextVector vector=new TextVector(id, content, record_time, user_number,response_to_number);
 			//初始情况下，ALLSESSION为空，新建一个Session包含第一个消息
 			if(Session.ALLSESSIONS.size()==0){
 				Session session=new Session();
 				session.addVector(vector);
 				Session.ALLSESSIONS.put(session.getId(), session);
 				System.out.println("新建会话:"+session.getId()+" 添加消息"+id);
+				lastvector=vector;
+				continue;
+			}
+			//如果连续两条消息的时间间隔小于minduration并且是同一个人发的，则认为两条消息应该是一条消息
+			if(lastvector!=null&&vector.getDatetime().getTime()-lastvector.getDatetime().getTime()<Threshold.minduration
+					&&vector.getUser_number().equals(lastvector.getUser_number())){
+				lastvector.getSessionBelong2().addVector(vector);
+				System.out.println("消息"+vector.getId()+"添加到会话"+lastvector.getSessionBelong2().getId()+"中， 连续两条同一人");
+				lastvector=vector;
+				continue;
+			}
+			//消息中存在@对象时，将艾特消息划分到被艾特的消息会话中
+			if(response_to_number!=null){
+				TextVector target=TextVector.getClosestVector(response_to_number, record_time);
+				target.getSessionBelong2().addVector(vector);
+				System.out.println("消息"+vector.getId()+"添加到会话"+target.getSessionBelong2().getId()+"中， 存在艾特");
+				lastvector=vector;
 				continue;
 			}
 			double sessionMax1=0;
@@ -57,6 +87,11 @@ public class SessionExtract {
 			Session belong1=null;
 			Session belong2=null;
 			List<Session> lastestSessions=Session.getLastestSessions(vector);
+			String sessionsnum="";
+			for(Session s:lastestSessions){
+				sessionsnum+=s.getId()+" ";
+			}
+			System.out.println("消息"+id+"的最新会话为："+sessionsnum);
 			for(Session session:lastestSessions){
 					double similarity=session.getMaxSimilarity(vector);
 					if((vector.getDatetime().getTime()-session.getLatestTime().getTime())<Threshold.minduration&&similarity>Threshold.lgama){
@@ -72,6 +107,7 @@ public class SessionExtract {
 			}
 			if(belong1!=null){
 				belong1.addVector(vector);
+				lastvector=vector;
 				continue;
 			}
 			else if(belong2==null||sessionMax2==0){
@@ -79,12 +115,14 @@ public class SessionExtract {
 				session.addVector(vector);
 				Session.ALLSESSIONS.put(session.getId(), session);
 				System.out.println("新建会话"+session.getId()+" 添加消息"+id);
+				lastvector=vector;
 				continue;
 			}
 			else{
 				belong2.addVector(vector);
 				System.out.println("消息"+id+"添加到会话"+belong2.getId()+"中");
 			}
+			lastvector=vector;
 //			//计算belong2会话中的所有消息与vector的相似度的最大值
 //			double vectorMax=0;//与该vector的相似度最大值
 //			TextVector parentVector=null;//与该vector相似度最大的消息向量
@@ -192,31 +230,32 @@ public class SessionExtract {
 //		double trans=60000.0;
 //		System.out.println("运行时间为："+(endtime-starttime)/trans+"分钟");
 		/**
-		 * 以下部分是读取文件中的Session，计算其会话向量并保存到数据库中
-		 */
-//		DBmanipulate db=DBmanipulate.getInstance();
-//		ResultSet rs=db.selectChatRecordN();
-//		while(rs.next()){
-//			int id=rs.getInt("id");
-//			String content=rs.getString("content");
-//			String user_number=rs.getString("user_number");
-//			String record_time=rs.getString("record_time");
-//			TextVector vector=new TextVector(id, content, record_time, user_number);
-//		}
-//		loadSessions();
-//		ExecuteCreateOriginalMap();
-////		ExecuteCreateIFTDFMap();
-//		for(Entry<Integer, Session> entry:Session.ALLSESSIONS.entrySet()){
-//			int id=entry.getKey();
-//			Map<String,Integer> originalMap=entry.getValue().getOriginalMap();
-//			List<String> content=new ArrayList<String>();
-//			for(String key:originalMap.keySet()){
-//				for(int i=0;i<originalMap.get(key);i++){
-//					content.add(key);
-//				}
-//			}
-//			db.saveSession(id, content.toString());
-//		}
-//		System.out.println(Session.ALLSESSIONS.size());
+//		 * 以下部分是读取文件中的Session，计算其会话向量并保存到数据库中
+//		 */
+		DBmanipulate db=DBmanipulate.getInstance();
+		ResultSet rs=db.selectChatRecordN();
+		while(rs.next()){
+			int id=rs.getInt("id");
+			String content=rs.getString("content");
+			String user_number=rs.getString("user_number");
+			String record_time=rs.getString("record_time");
+			String response_to=rs.getString("response_to");
+			TextVector vector=new TextVector(id, content, record_time, user_number,response_to);
+		}
+		loadSessions();
+		ExecuteCreateOriginalMap();
+//		ExecuteCreateIFTDFMap();
+		for(Entry<Integer, Session> entry:Session.ALLSESSIONS.entrySet()){
+			int id=entry.getKey();
+			Map<String,Integer> originalMap=entry.getValue().getOriginalMap();
+			List<String> content=new ArrayList<String>();
+			for(String key:originalMap.keySet()){
+				for(int i=0;i<originalMap.get(key);i++){
+					content.add(key);
+				}
+			}
+			db.saveSession(id, content.toString());
+		}
+		System.out.println(Session.ALLSESSIONS.size());
 	}
 }

@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.38-bin.jar"/>
 	<classpathentry kind="lib" path="lib/jna-4.0.0.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jnaTest"/>
 	<classpathentry kind="lib" path="lib/commons-collections4-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/mongo-java-driver-3.2.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

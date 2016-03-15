@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-
-import code.main.CLibrary;
 import database.DBmanipulate;
 
 public class SplitWord {
@@ -39,7 +37,7 @@ public class SplitWord {
 			List<String> afterripe=ripeStopWord(afterSplit);
 			System.out.println("分词结果："+afterSplit+"====去停用词后结果："+afterripe);
 			if(!afterripe.isEmpty()){
-				RecordN rn=new RecordN(afterripe, record.user_number, record.record_time);
+				RecordN rn=new RecordN(afterripe, record.user_number, record.record_time,record.session_id,record.response_To);
 				list.add(rn);
 			}
 		}
@@ -66,7 +64,7 @@ public class SplitWord {
 		DBmanipulate db=DBmanipulate.getInstance();
 		ResultSet rs=db.selectAll();
 		while(rs.next()){
-			Record r=new Record(rs.getInt("id"), rs.getString("content"), rs.getString("user_number"), rs.getString("record_time"));
+			Record r=new Record(rs.getInt("id"), rs.getString("content"), rs.getString("user_number"), rs.getString("record_time"),rs.getInt("session_id"),rs.getString("response_to"));
 			Record.add(r);
 		}
 	}
@@ -87,11 +85,15 @@ class Record{
 	String content;
 	String user_number;
 	String record_time;
-	public Record(int id,String content,String user_number,String record_time) {
+	int session_id;
+	String response_To;
+	public Record(int id,String content,String user_number,String record_time,int session_id,String response_To) {
 		// TODO Auto-generated constructor stub
 		this.id=id;
 		this.content=content;
 		this.user_number=user_number;
 		this.record_time=record_time;
+		this.session_id=session_id;
+		this.response_To=response_To;
 	}
 }

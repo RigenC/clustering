@@ -1,6 +1,7 @@
 package database;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,6 +14,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import clustering.Session;
 import preHandle.RecordN;
 import preHandle.SplitWord;
+import preHandle.transformFromQQ;
 
 public class DBmanipulate {
 	String driver="com.mysql.jdbc.Driver";
@@ -36,7 +38,7 @@ public class DBmanipulate {
 	 */
 	public ResultSet selectAll() throws Exception{
 		Statement statement=con.createStatement();
-		ResultSet rs=statement.executeQuery("select id,content,user_number,record_time from chatrecord");
+		ResultSet rs=statement.executeQuery("select id,content,user_number,record_time,session_id,response_to from chatrecord");
 		return rs;
 	}
 	/**
@@ -46,7 +48,7 @@ public class DBmanipulate {
 	 */
 	public ResultSet selectChatRecordN() throws SQLException{
 		Statement statement=con.createStatement();
-		ResultSet rs=statement.executeQuery("select id,content,user_number,record_time from chatrecordn");
+		ResultSet rs=statement.executeQuery("select id,content,user_number,record_time,response_to from chatrecordn");
 		return rs;
 	}
 	/**
@@ -85,6 +87,28 @@ public class DBmanipulate {
 		}
 		return true;
 	}
+	public Map<String,Set<String>> getAllUser(){
+		Map<String,Set<String>> result=new HashMap<String,Set<String>>();
+		try {
+			Statement statement=con.createStatement();
+			String sql="select user_number,user_name from user";
+			ResultSet rs=statement.executeQuery(sql);
+			while(rs.next()){
+				String number=rs.getString("user_number");
+				String names=rs.getString("user_name");
+				String[] str=names.split(",");
+				Set<String> list=new HashSet<String>();
+				for(String s:str){
+					list.add(s.substring(1,s.length()-1));
+				}
+				result.put(number, list);
+				return result;
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return result;
+	}
 	/**
 	 * 将分词后的聊天内容插入的到chatrecordN中，拼凑成一整句sql语句后再执行插入
 	 * @param list为分词后的记录内容
@@ -94,16 +118,22 @@ public class DBmanipulate {
 		boolean result=true;
 		try{
 		Statement statement=con.createStatement();
-		StringBuilder sql=new StringBuilder("insert into chatrecordN(content,user_number,record_time) values");
+		//StringBuilder sql=new StringBuilder("insert into chatrecordN(content,user_number,record_time,session_id) values");
 		Iterator<RecordN> it=list.iterator();
 		while(it.hasNext()){
 			RecordN rn=it.next();
-			String str="('"+rn.content+"','"+rn.user_number+"','"+rn.record_time+"'),";
-			sql.append(str);
+			String sql;
+			if(rn.response_to==null){
+				sql="insert into chatrecordN(content,user_number,record_time,session_id) value("
+						+ "'"+rn.content+"','"+rn.user_number+"','"+rn.record_time+"',"+rn.session_id+")";
+			}
+			else{
+				sql="insert into chatrecordN(content,user_number,record_time,session_id,response_to) value("
+						+ "'"+rn.content+"','"+rn.user_number+"','"+rn.record_time+"',"+rn.session_id+",'"+rn.response_to+"')";
+			}
+			System.out.println(sql);
+			statement.executeUpdate(sql);
 		}
-		sql.deleteCharAt(sql.length()-1);
-		System.out.println(sql);
-		statement.executeUpdate(sql.toString());
 		}catch(SQLException e){
 			e.printStackTrace();
 			result=false;
@@ -119,27 +149,40 @@ public class DBmanipulate {
 	 * @return 插入成功返回true
 	 * @throws SQLException
 	 */
-	public boolean insertShortText(String content,String date, String number) throws SQLException{
+	public boolean insertShortText(String content,String date, String number,String session_id,String responseTo) throws SQLException{
 		boolean result=true;
 		
 		Statement statement=null;
 		statement=con.createStatement();
-		String sql="insert into chatrecord(content,record_time,user_number) value('"+content+"','"+date+"','"+number+"')";
+		String sql;
+		if(responseTo==null)
+			sql="insert into chatrecord(content,record_time,user_number,session_id) value('"+content+"','"+date+"','"+number+"',"+session_id+")";
+		else
+			sql="insert into chatrecord(content,record_time,user_number,session_id,response_to) value('"+content+"','"+date+"','"+number+"',"+session_id+",'"+responseTo+"')";
 		System.out.println(sql);
 		result=statement.execute(sql);
 		statement.close();
 		return result;
 	}
-	public static void main(String[] args) throws SQLException {
-		Map<String,Integer> map=DBmanipulate.getInstance().getAllWord();
-		Iterator<Map.Entry<String,Integer>> entries=map.entrySet().iterator();
-		int totalNum=0;
-		while(entries.hasNext()){
-			Map.Entry<String, Integer> entry=entries.next();
-			System.out.println(entry.getKey()+": "+entry.getValue());
-			totalNum+=entry.getValue();
+	/**
+	 * 将素有的用户昵称保存到数据库中
+	 * @throws SQLException
+	 */
+	public void insertUserName() throws SQLException{
+		Statement statement=con.createStatement();
+		StringBuilder sql=new StringBuilder();
+		sql.append("insert into user(user_number,user_name) values");
+		for(Entry<String, Set<String>> entry:transformFromQQ.ALLUSERNAME.entrySet()){
+			sql.append("('"+entry.getKey()+"','"+entry.getValue().toString()+"'),");
 		}
-		System.out.println(map.size()+"  "+totalNum);
+		sql.deleteCharAt(sql.length()-1);
+		statement.execute(sql.toString());
+	}
+	public static void main(String[] args) throws Exception {
+		ResultSet rs=DBmanipulate.getInstance().selectAll();
+		while(rs.next()){
+			System.out.println(rs.getString("response_to"));
+		}
 	}
 	public static DBmanipulate getInstance(){
 		if(db!=null)

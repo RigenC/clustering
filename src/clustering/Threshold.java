@@ -10,25 +10,29 @@ public final class Threshold {
 	 */
 	public final static double beta=0.3;
 	/**
-	 * 分别是一小时转成的毫秒数和24小时转成的毫秒数
+	 * 分别是一小时转成的毫秒数和24小时转成的毫秒数.在会话抽取中用到，作为会话安全窗口时间，该窗口内的所有会话必须包含
 	 */
 	public final static long hour1Toms=3600000;
 	/**
-	 * 下面的常值变量是在将消息添加到会话时使用到，判断消息与会话的最新消息之间的时间差，个人感觉可以适当调小
+	 * 下面的常值变量是在将消息添加到会话时使用到，会话抽取边界时间
 	 */
 	public final static long maxduration=28800000;
 	/**
 	 * 在划分消息的会话归属时，若消息与会话的最新消息的时间差小于30s，则采用小阈值作为判断标准
 	 */
-	public final static long minduration=20000;
+	public final static long minduration=80000;
+	/**
+	 * 会话抽取算法中使用，K个最新会话
+	 */
+	public final static int k=10;
 	/**
 	 * 小阈值，当消息与会话的最新消息的时间差小于30s时，采用lgama作为判断标准
 	 */
-	public final static double lgama=0.25;
+	public final static double lgama=0.3;
 	/**
 	 * 消息与会话的相似度计算中用到的阈值，在SessionExtract中用到。对会话抽取结果影响很大，目前经验取值在0.3~0.5之间
 	 */
-	public final static double gama=0.4;
+	public final static double gama=0.45;
 	/**
 	 * 构建词语关系网络时，词语的词频阈值。词频高于该阈值的词语才参与词语关系网络的构建运算
 	 */

@@ -18,7 +18,6 @@ import java.util.Map.Entry;
 import com.sun.org.apache.xerces.internal.impl.dv.xs.FullDVFactory;
 
 import clustering.Threshold;
-import code.main;
 import database.DBmanipulate;
 import dynamicText.WordSimilarityNet;
 
@@ -71,7 +70,7 @@ public class Word {
 //				File file2=new File("WORDIDF.txt");
 //				BufferedWriter fw2=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file2,true),encoding));
 //				for(String key:WORDIDF.keySet()){
-//					fw2.append(key+" "+WORDIDF.get(key));
+//					fw2.append(""+WORDIDF.get(key));
 //					fw2.newLine();
 //				}
 //				fw2.flush();

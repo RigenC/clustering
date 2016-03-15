@@ -3,6 +3,7 @@ package clustering;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,7 +18,7 @@ import dynamicText.DynamicTextVector;
 import dynamicText.TextVector;
 import sementicAccurate.Word;
 
-public class Session {
+public class Session implements Comparable<Session>{
 	public static Map<Integer,Session> ALLSESSIONS=new HashMap<Integer,Session>();
 	public static Queue<Integer> LASTESTSESSION=new LinkedList<Integer>();
 	private static int num=0;
@@ -129,13 +130,31 @@ public class Session {
 	//获取ALLSESSIONS中最新的会话，即与TV时间相差在24小时内的会话
 	public static List<Session> getLastestSessions(TextVector tv){
 		Date date=tv.getDatetime();
-		List<Session> result=new ArrayList<Session>();
+		List<Session> list=new ArrayList<Session>();
 		for(Session session:ALLSESSIONS.values()){
-			if(getDiffTime(date, session.getLatestTime())){
-				result.add(session);
+			if(date.getTime()-session.getLatestTime().getTime()<Threshold.maxduration){
+				list.add(session);
 			}
 		}
+		Collections.sort(list);
+		List<Session> result=new ArrayList<Session>();
+		for(Session s:list){
+			if(result.size()<Threshold.k)
+				result.add(s);
+			else
+				break;
+		}
 		return result;
+	}
+	@Override
+	public int compareTo(Session o) {
+		// TODO Auto-generated method stub
+		if(this.latestTime.after(o.latestTime))
+			return -1;
+		else if(this.latestTime.before(o.latestTime))
+			return 1;
+		else
+			return 0;
 	}
 	
 	

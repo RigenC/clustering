@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import clustering.Session;
 import sementicAccurate.Word;
 
 public class TextVector {
@@ -18,7 +19,8 @@ public class TextVector {
 	private double max;
 	private String user_number;
 	private Date datetime;
-//	private List<Integer> childlIdList=new ArrayList<Integer>();
+	private String response_to_number;
+	//	private List<Integer> childlIdList=new ArrayList<Integer>();
 	private Map<String,Integer> originalWords=new HashMap<String,Integer>();
 	private Map<String,Double> tfidfVector=new HashMap<String,Double>();
 	@SuppressWarnings("deprecation")
@@ -30,9 +32,10 @@ public class TextVector {
 	 * @param user_number
 	 * @throws ParseException
 	 */
-	public TextVector(int id,String content,String recordtime,String user_number) throws ParseException{
+	public TextVector(int id,String content,String recordtime,String user_number,String response_to_number) throws ParseException{
 		this.id=id;
 		this.user_number=user_number;
+		this.response_to_number=response_to_number;
 		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		this.datetime=sdf.parse(recordtime);
 		content=content.substring(1,content.length()-1);
@@ -48,27 +51,10 @@ public class TextVector {
 		accurateTfidfVector();
 		ALLTEXTVECTORS.put(id, this);
 	}
-	/**
-	 * 与Child相关的方法和属性是第一版本的会话抽取算法的需求，第二版本中取消
-	 * @return
-	 */
-//	public void addChild(int id){
-//		this.childlIdList.add(id);
-//	}
-//	public void removeChild(int id){
-//		if(this.childlIdList.contains(id)){
-//			childlIdList.remove(new Integer(id));
-//		}
-//	}
-//	public List<Integer> getAllChildId(){
-//		List<Integer> result=new ArrayList<Integer>();
-//		result.add(id);
-//		for(Integer id:childlIdList){
-//			result.add(id);
-//			result.addAll(ALLTEXTVECTORS.get(id).getAllChildId());
-//		}
-//		return result;
-//	}
+
+	public String getResponse_to_number() {
+		return response_to_number;
+	}
 	public double getMax() {
 		return max;
 	}
@@ -102,6 +88,15 @@ public class TextVector {
 	public Map<String, Double> getTfidfVector() {
 		return tfidfVector;
 	}
+	public Session getSessionBelong2(){
+		if(Session.ALLSESSIONS.isEmpty())
+			return null;
+		for(Session s:Session.ALLSESSIONS.values()){
+			if(s.vectors.contains(this.id))
+				return s;
+		}
+		return null;
+	}
 	/**
 	 * 生成消息的原始向量后，计算消息的TFIDF权重向量
 	 */
@@ -126,19 +121,50 @@ public class TextVector {
 //		originalWords.clear();
 	}
 	/**
-	 * 计算两个消息向量之间的时间差，单位为h
-	 * @param time1 第一个时间
-	 * @param time2 第二个时间
+	 * 根据用户名和时间获取它前面离它最近的该用户的消息
+	 * @param usernumber 用户名，被艾特的人
+	 * @param date 该消息的时间
 	 * @return
+	 * @throws ParseException
 	 */
-	public static int getTimeDiff(Date time1,Date time2){
-		long diffTime=Math.abs(time1.getTime()-time2.getTime());
-		return (int) (diffTime/3600000);
+	public static TextVector getClosestVector(String usernumber,String datestr) throws ParseException{
+		SimpleDateFormat format= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date recent=format.parse("1970-01-01 00:00:00");
+		Date date=format.parse(datestr);
+		TextVector result=null;
+		for(TextVector vector:ALLTEXTVECTORS.values()){
+			if(vector.getUser_number().equals(usernumber)
+					&&vector.getDatetime().before(date)&&vector.getDatetime().after(recent)){
+				recent=vector.getDatetime();
+				result=vector;
+			}
+		}
+		return result;
 	}
 	public static void main(String[] args) throws ParseException {
 		Word.wordInitial();
-		TextVector vector=new TextVector(1,"[老师, 采购, 物资, 合同, 订单, 入账, 分, 录, 做]", "2015-10-23 13:14:39", "756257469");
 
 		
 	}
+	/**
+	 * 与Child相关的方法和属性是第一版本的会话抽取算法的需求，第二版本中取消
+	 * @return
+	 */
+//	public void addChild(int id){
+//		this.childlIdList.add(id);
+//	}
+//	public void removeChild(int id){
+//		if(this.childlIdList.contains(id)){
+//			childlIdList.remove(new Integer(id));
+//		}
+//	}
+//	public List<Integer> getAllChildId(){
+//		List<Integer> result=new ArrayList<Integer>();
+//		result.add(id);
+//		for(Integer id:childlIdList){
+//			result.add(id);
+//			result.addAll(ALLTEXTVECTORS.get(id).getAllChildId());
+//		}
+//		return result;
+//	}
 }

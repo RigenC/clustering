@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-import code.main;
-
 
 public class WordSimilarity {
 	private static Map<String, List<Word>> ALLWORDS = new HashMap<String, List<Word>>();
