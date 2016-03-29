@@ -20,10 +20,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import com.mongodb.BasicDBList;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import java.util.Queue;
 import java.util.Set;
-
-import database.DBmanipulate;
+import database.mongoDBManipulate;
 import dynamicText.DynamicTextVector;
 import dynamicText.TextVector;
 import preHandle.transformFromQQ;
@@ -37,20 +39,22 @@ public class SessionExtract {
 	public final static int maxSessionNum=4;
 	public static void ExecuteExtract() throws SQLException, ParseException {
 		Word.wordInitial();
-		DBmanipulate db=DBmanipulate.getInstance();
+		mongoDBManipulate db=mongoDBManipulate.getInstance();
 		transformFromQQ.ALLUSERNAME=db.getAllUser();
-		ResultSet rs=db.selectChatRecordN();
+		DBCursor cursor=db.selectChatRecordN();
 		TextVector lastvector = null;
-		while(rs.next()){
-			int id=rs.getInt("id");
-			String content=rs.getString("content");
-			String user_number=rs.getString("user_number");
-			String record_time=rs.getString("record_time");
-			String response_to=rs.getString("response_to");
+		while(cursor.hasNext()){
+			DBObject record=cursor.next();
+			int id=(int)record.get("record_id");
+			BasicDBList content=(BasicDBList) record.get("content");
+			String user_number=(String) record.get("user_number");
+			String record_time_str=(String)record.get("record_time");
+			Date record_time=transformFromQQ.sdf.parse(record_time_str);
+			Object response_to=record.get("response_to");
 			String response_to_number=null;
 			if(response_to!=null){
 				for(Entry<String, Set<String>> entry:transformFromQQ.ALLUSERNAME.entrySet()){
-					if(entry.getValue().contains(response_to)){
+					if(entry.getValue().contains(response_to.toString())){
 						response_to_number=entry.getKey();
 						break;
 					}
@@ -94,23 +98,25 @@ public class SessionExtract {
 			System.out.println("消息"+id+"的最新会话为："+sessionsnum);
 			for(Session session:lastestSessions){
 					double similarity=session.getMaxSimilarity(vector);
-					if((vector.getDatetime().getTime()-session.getLatestTime().getTime())<Threshold.minduration&&similarity>Threshold.lgama){
-						if(similarity>sessionMax1){
-							belong1=session;
-							sessionMax1=similarity;
-						}
-					}
+//					if((vector.getDatetime().getTime()-session.getLatestTime().getTime())<Threshold.minduration&&similarity>Threshold.lgama){
+//						if(similarity>sessionMax1){
+//							belong1=session;
+//							sessionMax1=similarity;
+//						}
+//					}
 					if(similarity>sessionMax2&&similarity>Threshold.gama){
 						sessionMax2=similarity;
 						belong2=session;
 					}
 			}
-			if(belong1!=null){
-				belong1.addVector(vector);
-				lastvector=vector;
-				continue;
-			}
-			else if(belong2==null||sessionMax2==0){
+//			if(belong1!=null){
+//				belong1.addVector(vector);
+//				lastvector=vector;
+//				System.out.println("消息"+id+"添加到会话"+belong1.getId()+"中");
+//				continue;
+//			}
+//			else 
+				if(belong2==null||sessionMax2==0){
 				Session session=new Session();
 				session.addVector(vector);
 				Session.ALLSESSIONS.put(session.getId(), session);
@@ -174,7 +180,7 @@ public class SessionExtract {
 	public static void ExecuteCreateIFTDFMap(){
 		//首先计算所有词语的IDF部分，计算所有词语的支持度（包含该词语的会话的数量）
 		Word.WORDIDF.clear();
-		for(String word:Word.ALLWORDS.keySet()){
+		for(String word:Word.ALLWORDS){
 			int Num=0;
 			for(Session session:Session.ALLSESSIONS.values()){
 				if(session.getOriginalMap().containsKey(word)){
@@ -210,52 +216,50 @@ public class SessionExtract {
 			Session.ALLSESSIONS.put(id, session);
 		}
 	}
-	public static void main(String[] args) throws SQLException, ParseException, IOException{
-		/**
-		 * 以下部分是会话抽取算法，结果保存在Session.txt中
-		 */
-//		Long starttime=System.currentTimeMillis();
-//		ExecuteExtract();
-//		System.out.println(Session.ALLSESSIONS.size());
-//		String encoding="utf-8";
-//		File file=new File("Session.txt");
-//		BufferedWriter fw=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file,true),encoding));
-//		for(Session session:Session.ALLSESSIONS.values()){
-////			System.out.println("会话"+session.getId()+" : "+session.vectors.size());
-//			fw.append(session.getId()+" "+session.vectors.toString());
-//			fw.newLine();
-//		}
-//		fw.close();
-//		Long endtime=System.currentTimeMillis();
-//		double trans=60000.0;
-//		System.out.println("运行时间为："+(endtime-starttime)/trans+"分钟");
-		/**
-//		 * 以下部分是读取文件中的Session，计算其会话向量并保存到数据库中
-//		 */
-		DBmanipulate db=DBmanipulate.getInstance();
-		ResultSet rs=db.selectChatRecordN();
-		while(rs.next()){
-			int id=rs.getInt("id");
-			String content=rs.getString("content");
-			String user_number=rs.getString("user_number");
-			String record_time=rs.getString("record_time");
-			String response_to=rs.getString("response_to");
+	public static void saveFile() throws SQLException, ParseException, IOException{
+		Long starttime=System.currentTimeMillis();
+		ExecuteExtract();
+		System.out.println(Session.ALLSESSIONS.size());
+		String encoding="utf-8";
+		File file=new File("Session.txt");
+		BufferedWriter fw=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file,true),encoding));
+		for(Session session:Session.ALLSESSIONS.values()){
+//			System.out.println("会话"+session.getId()+" : "+session.vectors.size());
+			fw.append(session.getId()+" "+session.vectors.toString());
+			fw.newLine();
+		}
+		fw.close();
+		Long endtime=System.currentTimeMillis();
+		double trans=60000.0;
+		System.out.println("运行时间为："+(endtime-starttime)/trans+"分钟");
+	}
+	public static void saveDB() throws ParseException, NumberFormatException, IOException{
+		mongoDBManipulate db=mongoDBManipulate.getInstance();
+		DBCursor cursor=db.selectChatRecordN();
+		while(cursor.hasNext()){
+			DBObject record=cursor.next();
+			int id=(int)record.get("record_id");
+			BasicDBList content=(BasicDBList) record.get("content");
+			String user_number=(String) record.get("user_number");
+			Date record_time=transformFromQQ.sdf.parse(record.get("record_time").toString());
+			String response_to=(String)record.get("response_to");
+			String response_to_number=null;
 			TextVector vector=new TextVector(id, content, record_time, user_number,response_to);
 		}
 		loadSessions();
 		ExecuteCreateOriginalMap();
 //		ExecuteCreateIFTDFMap();
-		for(Entry<Integer, Session> entry:Session.ALLSESSIONS.entrySet()){
-			int id=entry.getKey();
-			Map<String,Integer> originalMap=entry.getValue().getOriginalMap();
-			List<String> content=new ArrayList<String>();
-			for(String key:originalMap.keySet()){
-				for(int i=0;i<originalMap.get(key);i++){
-					content.add(key);
-				}
-			}
-			db.saveSession(id, content.toString());
-		}
-		System.out.println(Session.ALLSESSIONS.size());
+		db.saveSession();
+//		System.out.println(Session.ALLSESSIONS.size());
+	}
+	public static void main(String[] args) throws SQLException, ParseException, IOException{
+		/**
+		 * 以下部分是会话抽取算法，结果保存在Session.txt中
+		 */
+//		saveFile();
+		/**
+		 * 以下部分是读取文件中的Session，计算其会话向量并保存到数据库中
+		 */
+		saveDB();
 	}
 }

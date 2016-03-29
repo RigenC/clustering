@@ -18,25 +18,24 @@ import java.util.Map.Entry;
 import com.sun.org.apache.xerces.internal.impl.dv.xs.FullDVFactory;
 
 import clustering.Threshold;
-import database.DBmanipulate;
+import database.mongoDBManipulate;
 import dynamicText.WordSimilarityNet;
 
 public class Word {
-	public static HashMap<String,Integer> ALLWORDS;//保存所有词语及词语出现的次数
-	public static HashMap<String,Integer> WORDIDF;//保存所有词语及包含该词语的消息的数量
+	public static Set<String> ALLWORDS;//保存所有词语及词语出现的次数
+	public static Map<String,Integer> WORDIDF;//保存所有词语及包含该词语的消息的数量
 	public static List<String> FREQUENTWORD=new ArrayList<String>();
 	public static Integer totalTextNum=23030;//消息总数
 	static{
-		DBmanipulate db=DBmanipulate.getInstance();
+		mongoDBManipulate db=mongoDBManipulate.getInstance();
 		try {
-			pseudoload();
+//			pseudoload();
 			//计算词频，对词频大于0.00004的词语添加到常用词列表中，之后对常用词列表中的词计算两两之间的相似度，添加到词语相似度网络中
-			Double Num=0.0;
-			for(Integer value:ALLWORDS.values()){
-				Num+=value;
-			}
-			for(Entry<String, Integer> entry:ALLWORDS.entrySet()){
-				if(entry.getValue()/Num>Threshold.miu){
+			ALLWORDS=db.getAllWord();
+			totalTextNum=db.selectTextNum();
+			WORDIDF=db.getWordIDF(ALLWORDS);
+			for(Entry<String, Integer> entry:WORDIDF.entrySet()){
+				if(entry.getValue()/totalTextNum>Threshold.miu){
 					FREQUENTWORD.add(entry.getKey());
 				}
 			}
@@ -50,9 +49,7 @@ public class Word {
 					}
 				}
 			}
-//			ALLWORDS=db.getAllWord();
-//			totalTextNum=db.selectTextNum();
-//			WORDIDF=db.getWordIDF(ALLWORDS);
+			
 //			
 //			/**
 //			 * 这部分是把数据库中查出来的map存储到txt中，加快读取速度。
@@ -88,10 +85,9 @@ public class Word {
 	private static void pseudoload() throws NumberFormatException, IOException{
 		BufferedReader reader=new BufferedReader(new InputStreamReader(new FileInputStream("ALLWORDS.txt"), "UTF-8"));
 		String str=null;
-		ALLWORDS=new HashMap<String,Integer>();
+		ALLWORDS=new HashSet<String>();
 		while((str=reader.readLine())!=null){
-			String[] strs=str.split(" ");
-			ALLWORDS.put(strs[0],Integer.parseInt(strs[1]));
+			ALLWORDS.add(str);
 		}
 		reader=new BufferedReader(new InputStreamReader(new FileInputStream("WORDIDF.txt"), "UTF-8"));
 		WORDIDF=new HashMap<String,Integer>();

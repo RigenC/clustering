@@ -15,7 +15,7 @@ import clustering.Session;
 import preHandle.RecordN;
 import preHandle.SplitWord;
 import preHandle.transformFromQQ;
-
+@Deprecated //富帅哥是撒币！
 public class DBmanipulate {
 	String driver="com.mysql.jdbc.Driver";
 	String url="jdbc:mysql://127.0.0.1:3306/sql_test";

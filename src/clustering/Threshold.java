@@ -16,15 +16,19 @@ public final class Threshold {
 	/**
 	 * 下面的常值变量是在将消息添加到会话时使用到，会话抽取边界时间
 	 */
-	public final static long maxduration=28800000;
+	public final static long maxduration=14400000;
 	/**
 	 * 在划分消息的会话归属时，若消息与会话的最新消息的时间差小于30s，则采用小阈值作为判断标准
 	 */
-	public final static long minduration=80000;
+	public final static long minduration=30000;
 	/**
 	 * 会话抽取算法中使用，K个最新会话
 	 */
-	public final static int k=10;
+	public final static int k=6;
+	/**
+	 * 计算会话与消息的相似度时只考虑会话中的最新几条消息
+	 */
+	public final static int newsetvector=8;
 	/**
 	 * 小阈值，当消息与会话的最新消息的时间差小于30s时，采用lgama作为判断标准
 	 */

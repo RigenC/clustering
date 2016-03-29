@@ -15,3 +15,8 @@ Tip:时间差作为判断依据，但不作为参数参与计算。因为相似�
 3-10需要做的事情：splitword中添加response_to字段
 sessionExtract中添加用户信息的判断
 重新计算session
+
+目前的结构：
+DBmanipulate已弃用，是MySQL版本的数据库连接操作
+采用mongoDBManipulate，连接的mongodb
+preHandle中只运行transformFromQQ即可，读取和分词在同时进行了

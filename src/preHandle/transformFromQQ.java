@@ -6,6 +6,7 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,7 +14,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import database.DBmanipulate;;
+import com.huaban.analysis.jieba.JiebaSegmenter;
+import com.huaban.analysis.jieba.SegToken;
+import com.huaban.analysis.jieba.JiebaSegmenter.SegMode;
+
+import database.DBmanipulate;
+import database.mongoDBManipulate;;
 
 public class transformFromQQ {
 	private static String pattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d .*\\(\\d{1,13}_\\d{1,4}\\)";
@@ -23,7 +29,7 @@ public class transformFromQQ {
 	transformFromQQ(){
 		
 	}
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 //		System.out.println(ripeBiaodian("今天我，终于站在这年轻的“战场”；、"));
 		Transform("标注.txt");
 //		String line="jerry是的";
@@ -49,8 +55,11 @@ public class transformFromQQ {
 		}
 		return null;
 	}
-	public static void Transform(String filepath){
-		DBmanipulate db=DBmanipulate.getInstance();
+	public static void Transform(String filepath) throws IOException{
+		SplitWord.loadStopWords();
+		JiebaSegmenter segmenter = new JiebaSegmenter();
+		List<RecordN> list=new ArrayList<RecordN>();
+		int recordid=1;
 		int totalcount=0;
 		int count=0;
 		int errorcount=0;
@@ -138,22 +147,34 @@ public class transformFromQQ {
 								}
 							}
 //							System.out.println(date+"  "+number+"  "+content);
-							
-							if(!dbcontent.contains("🏻🏻")&&!number.equals("10000"))
-								db.insertShortText(dbcontent,date, number,sessionnumber,responseTo);
+							//以下是分词的步骤
+							if(!dbcontent.contains("🏻🏻")&&!number.equals("10000")){
+								List<SegToken> segtokens=segmenter.process(dbcontent, SegMode.SEARCH);
+								List<String> afterSplit=new ArrayList<String>();
+								for(SegToken st:segtokens){
+									afterSplit.add(st.word);
+								}
+								System.out.print("分词结果："+afterSplit.toString());
+								List<String> afterripe=SplitWord.ripeStopWord(afterSplit);
+								System.out.println("====去停用词后结果："+afterripe.toString());
+								if(!afterSplit.isEmpty()){
+									RecordN rn=new RecordN(recordid++,afterripe, number, date,Integer.parseInt(sessionnumber),responseTo);
+									list.add(rn);
+								}
+							}
 							title=nextline;
-							
 							content.delete(0, content.length());
-							
 						}catch(java.util.regex.PatternSyntaxException e)
 						{e.printStackTrace();
 						errorcount++;continue;}
 					}
 					lastline=nextline;
 				}
-				db.insertUserName();
+				mongoDBManipulate.getInstance().insertIntoChatRecord(list);
+//				System.out.println(ALLUSERNAME.size());
+				mongoDBManipulate.getInstance().insertUserName();
 				System.out.println(totalcount+"  "+count+"   "+errorcount);
-				db.removeIllegal();
+				mongoDBManipulate.getInstance().removeIllegal();
 			}
 			else{
 				System.out.println("文件不存在");

@@ -6,5 +6,7 @@
 	<classpathentry kind="lib" path="lib/jna-4.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/commons-collections4-4.1.jar"/>
 	<classpathentry kind="lib" path="lib/mongo-java-driver-3.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/jieba-analysis-1.0.2.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Demo"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

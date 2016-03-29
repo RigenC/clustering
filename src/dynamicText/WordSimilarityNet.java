@@ -3,7 +3,7 @@ package dynamicText;
 import java.util.HashMap;
 import java.util.Map;
 
-import database.DBmanipulate;
+import database.mongoDBManipulate;
 import sementicAccurate.WordSimilarity;
 
 public class WordSimilarityNet extends HashMap{
@@ -12,7 +12,7 @@ public class WordSimilarityNet extends HashMap{
 		if(wordSimilaritymap!=null)
 			return wordSimilaritymap;
 		else{
-			synchronized(DBmanipulate.class){
+			synchronized(mongoDBManipulate.class){
 				if(wordSimilaritymap==null){
 					wordSimilaritymap=new HashMap<WordKeyPair, Double>();
 					return wordSimilaritymap;

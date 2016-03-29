@@ -23,6 +23,7 @@ public class Session implements Comparable<Session>{
 	public static Queue<Integer> LASTESTSESSION=new LinkedList<Integer>();
 	private static int num=0;
 	private Date latestTime;
+	private Date startTime=new Date();
 	private int id;
 	public Map<String,Double> centralVector=new HashMap<String,Double>();
 	public List<Integer> vectors=new ArrayList<Integer>();
@@ -37,6 +38,9 @@ public class Session implements Comparable<Session>{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	public Date getStartTime() {
+		return startTime;
 	}
 	public void setId(int id) {
 		this.id = id;
@@ -102,17 +106,25 @@ public class Session implements Comparable<Session>{
 	}
 	public void addVector(TextVector tv){
 		vectors.add(tv.getId());
+		if(tv.getDatetime().before(startTime))
+			startTime=tv.getDatetime();
 		refreshLatestDate();
 	}
 	public double getMaxSimilarity(TextVector tv){
 		double max=0;
-		for(Integer id:vectors){
-			TextVector vector=TextVector.ALLTEXTVECTORS.get(id);
+		int i;
+		double diffTime2StartTime=(double)((tv.getDatetime().getTime()-startTime.getTime())/Threshold.hour1Toms);
+		double s=12/diffTime2StartTime;
+		if(vectors.size()>Threshold.newsetvector)
+			i=Threshold.newsetvector;
+		else i=0;
+		for(;i<vectors.size();i++){
+			TextVector vector=TextVector.ALLTEXTVECTORS.get(vectors.get(i));
 			double similarity=DynamicTextVector.getDynamicSimilarity(tv.getTfidfVector(), vector.getTfidfVector());
 			if(similarity>max)
 				max=similarity;
 		}
-		return max;
+		return s*max;
 	}
 	/**
 	 * 获取两个是时间的时间差是否大于
@@ -127,7 +139,7 @@ public class Session implements Comparable<Session>{
 		}
 		else return true;
 	}
-	//获取ALLSESSIONS中最新的会话，即与TV时间相差在24小时内的会话
+	//获取ALLSESSIONS中最新的会话，即与TV时间相差在12小时内的会话
 	public static List<Session> getLastestSessions(TextVector tv){
 		Date date=tv.getDatetime();
 		List<Session> list=new ArrayList<Session>();

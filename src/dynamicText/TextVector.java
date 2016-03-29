@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.mongodb.BasicDBList;
+
 import clustering.Session;
 import sementicAccurate.Word;
 
@@ -32,20 +34,18 @@ public class TextVector {
 	 * @param user_number
 	 * @throws ParseException
 	 */
-	public TextVector(int id,String content,String recordtime,String user_number,String response_to_number) throws ParseException{
+	public TextVector(int id,BasicDBList content,Date recordtime,String user_number,String response_to_number) throws ParseException{
 		this.id=id;
 		this.user_number=user_number;
 		this.response_to_number=response_to_number;
-		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		this.datetime=sdf.parse(recordtime);
-		content=content.substring(1,content.length()-1);
-		String[] str=content.split(",");
-		for(int i=0;i<str.length;i++){
-			if(originalWords.containsKey(str[i])){
-				originalWords.put(str[i].trim(), originalWords.get(str[i])+1);
+		this.datetime=recordtime;
+		for(Object object:content){
+			String word=(String)object;
+			if(originalWords.containsKey((String)word)){
+				originalWords.put(word, originalWords.get(word));
 			}
 			else {
-				originalWords.put(str[i].trim(), 1);
+				originalWords.put(word, 1);
 			}
 		}
 		accurateTfidfVector();
@@ -127,10 +127,10 @@ public class TextVector {
 	 * @return
 	 * @throws ParseException
 	 */
-	public static TextVector getClosestVector(String usernumber,String datestr) throws ParseException{
+	public static TextVector getClosestVector(String usernumber,Date datestr) throws ParseException{
 		SimpleDateFormat format= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date recent=format.parse("1970-01-01 00:00:00");
-		Date date=format.parse(datestr);
+		Date date=datestr;
 		TextVector result=null;
 		for(TextVector vector:ALLTEXTVECTORS.values()){
 			if(vector.getUser_number().equals(usernumber)
