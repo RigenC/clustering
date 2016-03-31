@@ -10,10 +10,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import database.DBmanipulate;
@@ -21,11 +24,16 @@ import database.mongoDBManipulate;
 import preHandle.transformFromQQ;
 
 public class FrequentWord {
+	public static List<MyList<String>> allLks=new ArrayList<MyList<String>>();
+	public static Map<MyList<String>,Integer> rankLk=new HashMap<MyList<String>,Integer>();
 	public static void main(String[] args) throws IOException {
-		System.out.println(transformFromQQ.sdf.format(new Date()));
+		Long starttime=new Date().getTime();
 		findFrequentWordSet();
-		System.out.println(transformFromQQ.sdf.format(new Date()));
+		System.out.println(new Date().getTime()-starttime);
 			
+	}
+	public static void removeSingle(){
+		
 	}
 	public static void findFrequentWordSet() throws IOException{
 		mongoDBManipulate db=mongoDBManipulate.getInstance();
@@ -43,7 +51,8 @@ public class FrequentWord {
 				c1.add(set);
 			}
 		}
-		printToFile(1, c1);
+		allLks.addAll(c1);
+//		printToFile(1, c1);
 		//以上部分是找到一阶频繁项集，以下是迭代过程
 		//根据Lk-1计算Ck
 		//对Ck中的每个元素计算其k-1阶子集，查看其是否在Lk-1中，修剪Ck
@@ -72,10 +81,17 @@ public class FrequentWord {
 				}
 			}
 			Collections.sort(Ck);
-			printToFile(i, Lk_1);
+//			printToFile(i, Lk_1);
 			Lk_1=Ck;
+			allLks.addAll(Lk_1);
 		}
+		getMaxLks();
 	}
+	/**
+	 * 直接删减策略
+	 * @param Lk_1
+	 * @param Ck
+	 */
 	public static void deleteInvalid(List<MyList<String>> Lk_1,List<MyList<String>> Ck){
 		List<MyList<String>> todelete=new ArrayList<MyList<String>>();
 		Iterator<MyList<String>> it=Ck.iterator();
@@ -91,14 +107,37 @@ public class FrequentWord {
 			Lk_1.remove(list);
 		}
 	}
+	/**
+	 * 获取k-1维子集
+	 * @param list
+	 * @return 返回所有K-1阶子集
+	 */
 	public static List<MyList<String>> getChildList(MyList<String> list){
 		List<MyList<String>> result=new ArrayList<MyList<String>>();
+		if(list.size()<2)
+			return result;
 		for(String str:list){
 			MyList<String> copy=new MyList<String>();
 			copy.addAll(list);
 			copy.remove(str);
 			copy.sort();
 			result.add(copy);
+		}
+		return result;
+	}
+	/**
+	 * 获取1阶到K-1阶的所有子集
+	 * @param list
+	 * @return
+	 */
+	public static List<MyList<String>> getAllChildList(MyList<String> list){
+		List<MyList<String>> result=new ArrayList<MyList<String>>();
+		for(MyList<String> child:getChildList(list)){
+			List<MyList<String>> childlist=getChildList(child);
+			if(childlist.size()>0)
+				result.addAll(childlist);
+			else 
+				return result;
 		}
 		return result;
 	}
@@ -114,6 +153,49 @@ public class FrequentWord {
 		}
 		return result;
 	}
+	/**
+	 * 计算完频繁项集后直接遍历所有计算最大频繁项集，对比用
+	 * @throws IOException 
+	 */
+	public static void getMaxLks() throws IOException{
+		mongoDBManipulate db=mongoDBManipulate.getInstance();
+		Iterator<MyList<String>> it=allLks.iterator();
+		List<MyList<String>> tobedeleted=new ArrayList<MyList<String>>();
+		while(it.hasNext()){
+			MyList<String> list=it.next();
+			if(list.size()<4){
+				tobedeleted.add(list);
+			}
+			List<MyList<String>> allchilds=getAllChildList(list);
+			for(MyList<String> child:allchilds){
+				if(allLks.contains(child))
+					tobedeleted.add(child);
+			}
+		}
+		allLks.removeAll(tobedeleted);
+		for(MyList<String> list:allLks){
+			int num=db.getWordFrequency(list);
+			rankLk.put(list, num);
+		}
+		List<Map.Entry<MyList<String>, Integer>> demolist=new ArrayList(rankLk.entrySet());
+		Collections.sort(demolist,new Comparator() {
+			public int compare(Object o1, Object o2) {  
+                Map.Entry obj1 = (Map.Entry) o1;  
+                Map.Entry obj2 = (Map.Entry) o2;  
+                return ((Integer) obj2.getValue()).compareTo((Integer)obj1.getValue());  
+                }  
+		});
+		List<MyList<String>> printlist=new ArrayList<MyList<String>>();
+		for(Map.Entry<MyList<String>, Integer> entry:demolist)
+			printlist.add(entry.getKey());
+//		printToFile(0, printlist);
+	}
+	/**
+	 * 将频繁词集打印到文件中，测试阶段使用
+	 * @param num
+	 * @param set
+	 * @throws IOException
+	 */
 	public static void printToFile(int num,List<MyList<String>> set) throws IOException{
 		File file=new File("FrequentWord\\"+num+".txt");
 		BufferedWriter fw=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file,true),"utf-8"));
@@ -125,46 +207,4 @@ public class FrequentWord {
 		fw.close();
 	}
 }
-class MyList<T extends Comparable> extends ArrayList<T> implements Comparable{
 
-	@Override
-	public int compareTo(Object arg0) {
-		// TODO Auto-generated method stub
-		ArrayList<T> set=(ArrayList)arg0;
-		for(int i=0;i<set.size();i++){
-			try{
-			if(!this.get(i).equals(set.get(i)))
-				return this.get(i).compareTo(set.get(i));
-			}
-			catch(java.lang.IndexOutOfBoundsException e){
-				e.printStackTrace();
-			}
-		}
-		return 0;
-	}
-	public void sort(){
-		java.util.Collections.sort(this);
-	}
-	public MyList<String> calAssociate(MyList<String> list){
-		if(this.size()!=list.size())
-			return null;
-		MyList<String> MyList=new MyList<String>();
-		for(int i=0;i<this.size()-1;i++){
-			if(this.get(i).equals(list.get(i))){
-				MyList.add((String)this.get(i));
-			}
-		}
-		if(!this.get(this.size()-1).equals(list.get(list.size()-1))){
-			MyList.add((String)this.get(this.size()-1));
-			MyList.add(list.get(list.size()-1));
-			MyList.sort();
-			if(MyList.size()!=list.size()+1)
-				return null;
-			else
-			return MyList;
-		}
-		else{
-			return null;
-		}
-	}
-}

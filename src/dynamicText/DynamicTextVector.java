@@ -12,9 +12,9 @@ public class DynamicTextVector {
 //	private static final double beta=0.5;
 	/**
 	 * 计算两个文档向量在扩充之前的相似度，即原始向量的相似度
-	 * @param v1
-	 * @param v2
-	 * @return
+	 * @param v1 Map<String,Double>
+	 * @param v2 Map<String,Double>
+	 * @return double,关系值
 	 */
 	public static double originalTFIDF(Map<String,Double> v1,Map<String,Double> v2){
 		Map<String,Double> map1=new HashMap<String, Double>();
@@ -54,6 +54,12 @@ public class DynamicTextVector {
 		}
 		return result;
 	}
+	/**
+	 * 获取两个文本向量的向量之间的动态关系
+	 * @param v1 Map<String,Double>
+	 * @param v2 Map<String,Double>
+	 * @return double，关系值
+	 */
 	public static double getDynamicSimilarity(Map<String,Double> v1,Map<String,Double> v2){
 		Map<String,Double> originalVector1=v1;
 		Map<String,Double> originalVector2=v2;

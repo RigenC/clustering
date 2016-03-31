@@ -12,6 +12,8 @@ import java.util.Map.Entry;
 
 import com.mongodb.BasicDBList;
 
+import clustering.FrequentWord;
+import clustering.MyList;
 import clustering.Session;
 import sementicAccurate.Word;
 
@@ -51,7 +53,17 @@ public class TextVector {
 		accurateTfidfVector();
 		ALLTEXTVECTORS.put(id, this);
 	}
-
+	/**
+	 * 频繁项集初次聚类使用
+	 * @param id
+	 * @param content
+	 */
+	public TextVector(int id, MyList<String> content){
+		this.id=id;
+		for(String word:content){
+			tfidfVector.put(word, 1.0);
+		}
+	}
 	public String getResponse_to_number() {
 		return response_to_number;
 	}
@@ -88,6 +100,10 @@ public class TextVector {
 	public Map<String, Double> getTfidfVector() {
 		return tfidfVector;
 	}
+	/**
+	 * 获取该文本向量所属的会话，会话抽取的判断规则中使用
+	 * @return
+	 */
 	public Session getSessionBelong2(){
 		if(Session.ALLSESSIONS.isEmpty())
 			return null;

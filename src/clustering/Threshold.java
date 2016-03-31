@@ -45,4 +45,8 @@ public final class Threshold {
 	 * 频繁词集的选择阈值，代表词语的最低词频
 	 */
 	public final static double theta=0;
+	/**
+	 * 频繁项集初次聚类使用，每个聚簇包含的项集的数量，小于则判定为游离点
+	 */
+	public final static double t=2;
 }
