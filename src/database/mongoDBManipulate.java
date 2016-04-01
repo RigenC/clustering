@@ -56,7 +56,6 @@ public class mongoDBManipulate {
 			if(record.response_to!=null&&!record.response_to.equals("")){
 				object.put("response_to", record.response_to);
 			}
-			object.put("session_id", record.session_id);
 			insert.add(object);
 		}
 		chatrecord.insert(insert);

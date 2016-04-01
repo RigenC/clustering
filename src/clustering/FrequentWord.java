@@ -45,13 +45,14 @@ public class FrequentWord {
 			String word=it.next();
 			set.add(word);
 			int num=db.getWordFrequency(set);
-			if(num<5)
+			if(num<10)
 				continue;
 			else{
 				c1.add(set);
 			}
 		}
 		allLks.addAll(c1);
+		System.out.println(c1.size());
 //		printToFile(1, c1);
 		//以上部分是找到一阶频繁项集，以下是迭代过程
 		//根据Lk-1计算Ck
@@ -65,7 +66,7 @@ public class FrequentWord {
 			while(iterator.hasNext()){
 				MyList<String> list=iterator.next();
 				int num=db.getWordFrequency(list);
-				if(num<4){
+				if(num<10){
 					iterator.remove();
 				}
 			}

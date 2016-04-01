@@ -25,7 +25,7 @@ import database.mongoDBManipulate;
 import kevin.zhang.NLPIR;;
 
 public class transformFromQQ2 {
-	private static String pattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d .*\\(\\d{1,13}_\\d{1,4}\\)";
+	private static String pattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d .*\\(\\d{1,13}\\)";
 	private static String timestamppattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d ";
 	private static Set<String> partofspeech=new TreeSet<String>();
 	static{
@@ -39,7 +39,7 @@ public class transformFromQQ2 {
 	}
 	public static void main(String[] args) throws IOException {
 //		System.out.println(ripeBiaodian("今天我，终于站在这年轻的“战场”；、"));
-		Transform("标注.txt");
+		Transform("四大国际会计师事务所.txt");
 //		String line="jerry是的";
 //		Pattern ptime=Pattern.compile("@\\S+");
 //		Matcher matche=ptime.matcher(line);
@@ -119,12 +119,18 @@ public class transformFromQQ2 {
 						try{
 							String dbcontent=content.toString();
 							Pattern ptime=Pattern.compile(timestamppattern);
-							Pattern pnumber=Pattern.compile("\\(\\d{5,12}_\\d{1,4}\\)");
+							Pattern pnumber=Pattern.compile("\\(\\d{5,12}\\)");
 //							Pattern presponseTo=Pattern.compile("@\\S+ ");
 //							Matcher mresponseTo=presponseTo.matcher(content);
 							String responseTo=ripeUserName(dbcontent);
+							System.out.println(responseTo);
 							if(responseTo!=null){
-								dbcontent=dbcontent.replaceAll("@"+responseTo, "");
+								String responseTo2=responseTo;
+								if(responseTo2.contains("(")||responseTo2.contains("")){
+									responseTo2=responseTo2.replaceAll("\\(", "\\\\(");
+									responseTo2=responseTo2.replaceAll("\\)", "\\\\)");
+								}
+								dbcontent=dbcontent.replaceAll("@"+responseTo2, "");
 								responseTo=responseTo.replace("@", "");
 							}
 //							if(mresponseTo.find()){
@@ -142,12 +148,12 @@ public class transformFromQQ2 {
 								str=mnumber.group();
 							}
 							String nickname=title.replaceAll(timestamppattern, "");
-							nickname=nickname.replaceAll("\\(\\d{5,12}_\\d{1,4}\\)", "");
+							nickname=nickname.replaceAll("\\(\\d{5,12}\\)", "");
 							nickname=nickname.replaceFirst("【.*?】", "");
 							str=str.replace("(", "");
 							str=str.replace(")", "");
-							String number=str.split("_")[0];
-							String sessionnumber=str.split("_")[1];
+							String number=str;//.split("_")[0];//sessionId，先取消
+							//String sessionnumber=str.split("_")[1];
 							dbcontent=dbcontent.replaceAll("\'", "\'\'");//sql语句中不能直接包含'
 							dbcontent=dbcontent.replaceAll("\\\\", "");
 							dbcontent=ripeBiaodian(dbcontent);
@@ -182,7 +188,7 @@ public class transformFromQQ2 {
 								List<String> afterripe=SplitWord.ripeStopWord(afterSplit);
 //								System.out.println("====去停用词后结果："+afterripe.toString());
 								if(!afterSplit.isEmpty()){
-									RecordN rn=new RecordN(recordid++,afterripe, number, date,Integer.parseInt(sessionnumber),responseTo);
+									RecordN rn=new RecordN(recordid++,afterripe, number, date,responseTo);
 									list.add(rn);
 								}
 							}
@@ -190,14 +196,14 @@ public class transformFromQQ2 {
 							content.delete(0, content.length());
 						}catch(java.util.regex.PatternSyntaxException e)
 						{e.printStackTrace();
-						errorcount++;continue;}
+						errorcount++;return;}
 					}
 					lastline=nextline;
 				}
 				mongoDBManipulate.getInstance().insertIntoChatRecord(list);
 				System.out.println(ALLUSERNAME.size());
 				mongoDBManipulate.getInstance().insertUserName();
-				System.out.println(totalcount+"  "+count+"   "+errorcount);
+				System.out.println(list.size()+"  "+count+"   "+errorcount);
 				mongoDBManipulate.getInstance().removeIllegal();
 			}
 			else{

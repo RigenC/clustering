@@ -19,13 +19,12 @@ import com.huaban.analysis.jieba.JiebaSegmenter.SegMode;
 
 public class testDemo1 {
 	public static void main(String[] args) throws IOException {
-		List<String> list=new ArrayList<String>();
-		List<String> list2=new ArrayList<String>();
-		String str=new String("富帅哥傻逼");
-		list.add(str);
-		list.add("123");
-		list.clear();
-		list.add("1234");
-		System.out.println(list.size());
+		String s="123@小财务（小湘)";
+		String str="@小财务（小湘)";
+		if(str.contains("(")||str.contains(")")){
+			str=str.replaceAll("\\(", "\\\\(");
+			str=str.replaceAll("\\)", "\\\\)");
+		}
+		System.out.println(s.replaceAll(str, ""));
 	}
 }
