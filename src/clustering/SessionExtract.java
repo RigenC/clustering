@@ -29,6 +29,7 @@ import database.mongoDBManipulate;
 import dynamicText.DynamicTextVector;
 import dynamicText.TextVector;
 import preHandle.transformFromQQ;
+import preHandle.transformFromQQ2;
 import sementicAccurate.Word;
 
 public class SessionExtract {
@@ -210,7 +211,6 @@ public class SessionExtract {
 			String vector=strs[1].substring(0, strs[1].length()-1);
 			String[] vectors=vector.split(",");
 			for(String s:vectors){
-				System.out.println(s.trim());
 				session.vectors.add(Integer.parseInt(s.trim()));
 			}
 			Session.ALLSESSIONS.put(id, session);
@@ -248,8 +248,9 @@ public class SessionExtract {
 		}
 		loadSessions();
 		ExecuteCreateOriginalMap();
-//		ExecuteCreateIFTDFMap();
-		db.saveSession();
+		ExecuteCreateIFTDFMap();
+		System.out.println("加载Session完成"+transformFromQQ2.sdf.format(new Date()));
+//		db.saveSession();
 //		System.out.println(Session.ALLSESSIONS.size());
 	}
 	public static void main(String[] args) throws SQLException, ParseException, IOException{

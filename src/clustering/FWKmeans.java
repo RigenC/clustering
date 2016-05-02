@@ -11,7 +11,28 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+/*
+            _ooOoo_
+           o8888888o
+		   88" . "88
+           (| -_- |)
+           O\  =  /O
+        ____/`---'\____
+      .'  \\|     |//  `.
+     /  \\|||  :  |||//  \
+    /  _||||| -:- |||||-  \
+    |   | \\\  -  /// |   |
+    | \_|  ''\---/''  |   |
+    \  .-\__  `-`  ___/-. /
+  ___`. .'  /--.--\  `. . __
+."" '<  `.___\_<|>_/___.'  >'"".
+| | :  `- \`.;`\ _ /`;.`/ - ` : | |
+\  \ `-.   \_ __\ /__ _/   .-` /  /
+======`-.____`-.___\_____/___.-`____.-'======
+            `=---='
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                           佛祖保佑       永无BUG
+*/
 public class FWKmeans {
 	//数据总数
 	private int InstanceNumber;
@@ -57,7 +78,8 @@ public class FWKmeans {
 			e.printStackTrace();
 		}
 	}
-	public void cluster(){
+	public List<ArrayList<MyList<String>>> cluster(){
+		List<ArrayList<MyList<String>>> clusterresult=new ArrayList<ArrayList<MyList<String>>>();
 		// 标记是否需要重新找初始点
 		boolean needUpdataInitials = true;
 		// 找初始点的迭代次数
@@ -85,11 +107,13 @@ public class FWKmeans {
 		Adjust();
 		int i=1;
 		for(ArrayList<Integer> cluster:result){
-			System.out.println("聚簇"+i++);
+			ArrayList<MyList<String>> list=new ArrayList<MyList<String>>();
 			for(Integer num:cluster){
-				System.out.println(data.get(num).toString());
+				list.add(data.get(num));
 			}
+			clusterresult.add(list);
 		}
+		return clusterresult;
 	}
 	public void findInitials() {
 		// a,b为标志距离最远的两个向量的索引

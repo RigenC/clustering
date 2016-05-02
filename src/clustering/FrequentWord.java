@@ -36,6 +36,7 @@ public class FrequentWord {
 		
 	}
 	public static void findFrequentWordSet() throws IOException{
+		List<List<MyList<String>>> topk=new ArrayList<List<MyList<String>>>();
 		mongoDBManipulate db=mongoDBManipulate.getInstance();
 		Set<String> allword=db.getAllWord();
 		Iterator<String> it=allword.iterator();
@@ -45,14 +46,14 @@ public class FrequentWord {
 			String word=it.next();
 			set.add(word);
 			int num=db.getWordFrequency(set);
-			if(num<10)
+			if(num<40)
 				continue;
 			else{
 				c1.add(set);
 			}
 		}
 		allLks.addAll(c1);
-		System.out.println(c1.size());
+		System.out.println("1阶频繁项集："+c1.size());
 //		printToFile(1, c1);
 		//以上部分是找到一阶频繁项集，以下是迭代过程
 		//根据Lk-1计算Ck
@@ -66,7 +67,7 @@ public class FrequentWord {
 			while(iterator.hasNext()){
 				MyList<String> list=iterator.next();
 				int num=db.getWordFrequency(list);
-				if(num<10){
+				if(num<35){
 					iterator.remove();
 				}
 			}
@@ -75,14 +76,15 @@ public class FrequentWord {
 			Iterator<MyList<String>> iterator2=Lk_1.iterator();
 			while(iterator2.hasNext()){
 				MyList<String> list=iterator2.next();
-				List<MyList<String>> childLists=getChildList(list);
+				List<MyList<String>> childLists=new ArrayList(getChildList(list));
 				for(MyList<String> childList:childLists){
 					if(Lk_1.contains(childList))
 						iterator2.remove();
 				}
 			}
+			System.out.println(i+"阶频繁项集："+Ck.size());
 			Collections.sort(Ck);
-//			printToFile(i, Lk_1);
+			printToFile(i, Lk_1);
 			Lk_1=Ck;
 			allLks.addAll(Lk_1);
 		}
@@ -98,7 +100,7 @@ public class FrequentWord {
 		Iterator<MyList<String>> it=Ck.iterator();
 		while(it.hasNext()){
 			MyList<String> list=it.next();
-			List<MyList<String>> childLists=getChildList(list);
+			List<MyList<String>> childLists=new ArrayList(getChildList(list));
 			for(MyList<String> childList:childLists){
 				if(!Lk_1.contains(childList))
 					todelete.add(list);
@@ -113,8 +115,8 @@ public class FrequentWord {
 	 * @param list
 	 * @return 返回所有K-1阶子集
 	 */
-	public static List<MyList<String>> getChildList(MyList<String> list){
-		List<MyList<String>> result=new ArrayList<MyList<String>>();
+	public static Set<MyList<String>> getChildList(MyList<String> list){
+		Set<MyList<String>> result=new HashSet<MyList<String>>();
 		if(list.size()<2)
 			return result;
 		for(String str:list){
@@ -131,14 +133,17 @@ public class FrequentWord {
 	 * @param list
 	 * @return
 	 */
-	public static List<MyList<String>> getAllChildList(MyList<String> list){
-		List<MyList<String>> result=new ArrayList<MyList<String>>();
-		for(MyList<String> child:getChildList(list)){
-			List<MyList<String>> childlist=getChildList(child);
-			if(childlist.size()>0)
-				result.addAll(childlist);
-			else 
-				return result;
+	public static Set<MyList<String>> getAllChildList(MyList<String> list){
+		Set<MyList<String>> result=new HashSet<MyList<String>>();
+		Set<MyList<String>> childlist=getChildList(list);
+		if(childlist.size()>0){
+			result.addAll(childlist);
+			for(MyList<String> child:childlist){
+				if(child.size()>0)
+					result.addAll(getAllChildList(child));
+				else 
+					return result;
+			}
 		}
 		return result;
 	}
@@ -160,6 +165,7 @@ public class FrequentWord {
 	 */
 	public static void getMaxLks() throws IOException{
 		mongoDBManipulate db=mongoDBManipulate.getInstance();
+		System.out.println("allLks数量："+allLks.size());
 		Iterator<MyList<String>> it=allLks.iterator();
 		List<MyList<String>> tobedeleted=new ArrayList<MyList<String>>();
 		while(it.hasNext()){
@@ -167,13 +173,15 @@ public class FrequentWord {
 			if(list.size()<4){
 				tobedeleted.add(list);
 			}
-			List<MyList<String>> allchilds=getAllChildList(list);
+			List<MyList<String>> allchilds=new ArrayList(getAllChildList(list));
 			for(MyList<String> child:allchilds){
 				if(allLks.contains(child))
 					tobedeleted.add(child);
 			}
 		}
+		System.out.println("待删除的数量:"+tobedeleted.size());
 		allLks.removeAll(tobedeleted);
+		System.out.println("allLks数量："+allLks.size());
 		for(MyList<String> list:allLks){
 			int num=db.getWordFrequency(list);
 			rankLk.put(list, num);
@@ -189,7 +197,7 @@ public class FrequentWord {
 		List<MyList<String>> printlist=new ArrayList<MyList<String>>();
 		for(Map.Entry<MyList<String>, Integer> entry:demolist)
 			printlist.add(entry.getKey());
-//		printToFile(0, printlist);
+		printToFile(0, printlist);
 	}
 	/**
 	 * 将频繁词集打印到文件中，测试阶段使用

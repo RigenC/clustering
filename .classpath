@@ -5,8 +5,9 @@
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.38-bin.jar"/>
 	<classpathentry kind="lib" path="lib/jna-4.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/commons-collections4-4.1.jar"/>
-	<classpathentry kind="lib" path="lib/mongo-java-driver-3.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/mongo-java-driver-3.2.2.jar" sourcepath="C:/Users/administrater/.m2/repository/org/mongodb/mongo-java-driver/3.2.2/mongo-java-driver-3.2.2-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jieba-analysis-1.0.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Demo"/>
+	<classpathentry kind="lib" path="lib/json-20151124.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

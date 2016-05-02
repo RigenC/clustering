@@ -272,7 +272,7 @@ public class WordSimilarity {
         	if(!ALLWORDS.containsKey(word2))
         		UNINCLUDED.add(word2);
 //    			System.out.println(word2+" 未收录");
-	        return -1.0;
+	        return 0;
         }
     }
 

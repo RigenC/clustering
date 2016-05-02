@@ -8,6 +8,9 @@ public class MyList<T extends Comparable> extends ArrayList<T> implements Compar
 	public int compareTo(Object arg0) {
 		// TODO Auto-generated method stub
 		ArrayList<T> set=(ArrayList)arg0;
+		if(this.size()!=set.size()){
+			return this.size()-set.size();
+		}
 		for(int i=0;i<set.size();i++){
 			try{
 			if(!this.get(i).equals(set.get(i)))

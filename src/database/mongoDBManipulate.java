@@ -1,6 +1,7 @@
 package database;
 import com.mongodb.util.*;
 
+import clustering.MyList;
 import clustering.Session;
 import preHandle.RecordN;
 import preHandle.transformFromQQ;
@@ -58,7 +59,8 @@ public class mongoDBManipulate {
 			}
 			insert.add(object);
 		}
-		chatrecord.insert(insert);
+		WriteResult result=chatrecord.insert(insert);
+		System.out.println(result.wasAcknowledged());;
 	}
 	/**
 	 * 查询记录中出现的所有词语
@@ -108,9 +110,14 @@ public class mongoDBManipulate {
 			insert.put("names", entry.getValue());
 			list.add(insert);
 		}
-//		System.out.println(list.size());
+		System.out.println(list.size());
+		try {
+			Thread.currentThread().sleep(3000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		WriteResult result=user.insert(list);
-		
 	}
 	/**
 	 * 删除chatrecord中content为空或者只包含一个空格的记录
@@ -153,6 +160,26 @@ public class mongoDBManipulate {
 		DBCollection chatrecord=clusterdb.getCollection(recordCollection);
 		return chatrecord.find();
 	}
+	public List<Integer> getSessions(MyList<String> list){
+		List<Integer> result=new ArrayList<Integer>();
+		DBCollection sessions=clusterdb.getCollection(sessionCollection);
+		DBObject query=new BasicDBObject();
+		DBObject all=new BasicDBObject();
+		all.put("$all", list);
+		query.put("content", all);
+		DBObject field=new BasicDBObject();
+		field.put("id", 1);
+		DBCursor cursor=sessions.find(query, field);
+		while(cursor.hasNext()){
+			DBObject record=cursor.next();
+			Integer id=(Integer)record.get("id");
+			result.add(id);
+		}
+		return result;
+	}
+	/**
+	 * 保存会话
+	 */
 	public void saveSession(){
 		DBCollection session=clusterdb.getCollection(sessionCollection);
 		List<BasicDBObject> insert=new ArrayList<BasicDBObject>();
@@ -172,6 +199,11 @@ public class mongoDBManipulate {
 		WriteResult result=session.insert(insert);
 		clusterdb.getWriteConcern().callGetLastError();
 		System.out.println();
+	}
+	public DBCursor getAllSessions(){
+		DBCollection sessions=clusterdb.getCollection(sessionCollection);
+		DBCursor cursor=sessions.find();
+		return cursor;
 	}
 	public int getWordFrequency(Collection<String> list){
 		DBCollection sessions=clusterdb.getCollection(sessionCollection);

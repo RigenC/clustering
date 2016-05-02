@@ -4,6 +4,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,8 +29,9 @@ public class transformFromQQ2 {
 	private static String pattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d .*\\(\\d{1,13}\\)";
 	private static String timestamppattern="\\d{4}-[0-1]\\d-[0-3]\\d \\d{1,2}:[0-6]\\d:[0-6]\\d ";
 	private static Set<String> partofspeech=new TreeSet<String>();
+	private static Set<String> verbs=new HashSet<String>();
 	static{
-		String[] str={"n","ns","nt","nz","nl","ng","v","vd","vn","vl","vg","a","ad","net"};
+		String[] str={"n","ns","nt","nz","nl","ng","vd","vn","vl","vg","a","ad","net"};
 		Collections.addAll(partofspeech, str);
 	}
 	public static Map<String,Set<String>> ALLUSERNAME=new HashMap<String,Set<String>>();
@@ -181,8 +183,8 @@ public class transformFromQQ2 {
 									if(word.length==2&&partOfSpeech(word[1])){
 										afterSplit.add(word[0]);
 									}
-									if(word.length==2&&word[1].equals("v")&&word[0].length()==5)
-										System.out.println(word[0]);
+									if(word.length==2&&word[1].equals("v")&&word[0].length()>1)
+										afterSplit.add(word[0]);
 								}
 //								System.out.print("分词结果："+afterSplit.toString());
 								List<String> afterripe=SplitWord.ripeStopWord(afterSplit);

@@ -29,6 +29,10 @@ public class Session implements Comparable<Session>{
 	public List<Integer> vectors=new ArrayList<Integer>();
 	private Map<String,Integer> originalMap=new HashMap<String,Integer>();
 	private Map<String,Double> tfidfMap=new HashMap<String,Double>();
+	public Set<String> words=new HashSet<String>();//可视化阶段用到，用来存储关键词。
+	public Map<String, Double> getTfidfMap() {
+		return tfidfMap;
+	}
 	public Session() {
 		// TODO Auto-generated constructor stub
 		this.id=num++;
@@ -91,7 +95,7 @@ public class Session implements Comparable<Session>{
 		for(Entry<String,Double> entry:tfidfMap.entrySet()){
 			tfidfMap.put(entry.getKey(), entry.getValue()/der);
 		}
-//		originalMap.clear();
+		originalMap.clear();
 	}
 	/**
 	 * 重新计算会话的最新时间

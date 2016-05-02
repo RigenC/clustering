@@ -49,4 +49,10 @@ public final class Threshold {
 	 * 频繁项集初次聚类使用，每个聚簇包含的项集的数量，小于则判定为游离点
 	 */
 	public final static double t=2;
+	
+	public final static double z=2;
+	/**
+	 * 可视化阶段，每个聚簇选取的关键词个数。
+	 */
+	public final static int pointNum=25;
 }
